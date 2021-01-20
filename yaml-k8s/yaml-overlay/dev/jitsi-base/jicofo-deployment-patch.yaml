@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: jitsi
+  name: jicofo
+spec:
+  template:
+    spec:
+      containers:
+        - name: jicofo
+          resources:
+            limits:
+              memory: 400Mi
+              cpu: 400m
+            requests:
+              memory: 400Mi
+              cpu: 400m

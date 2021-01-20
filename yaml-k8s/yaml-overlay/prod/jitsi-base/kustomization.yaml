@@ -1,0 +1,9 @@
+bases:
+  - ../../../yaml-base/shard
+
+patchesStrategicMerge:
+  - jvb-statefulset-patch.yaml
+  - jvb-hpa-patch.yaml
+  - jicofo-deployment-patch.yaml
+  - prosody-deployment-patch.yaml
+  - web-deployment-patch.yaml

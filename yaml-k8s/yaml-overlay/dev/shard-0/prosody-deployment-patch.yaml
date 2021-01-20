@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: jitsi
+  name: prosody
+spec:
+  selector:
+    matchLabels:
+      shard: "0"
+  template:
+    metadata:
+      labels:
+        shard: "0"
+    spec:
+      # avoid that pods of different shards share zone
+      nodeSelector:
+        topology.kubernetes.io/zone: ZONE_0

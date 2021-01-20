@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: haproxy-ingress
+  namespace: jitsi
+  annotations:
+    kubernetes.io/ingress.class: nginx-ingress
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/send-timeout: "3600"
+spec:
+  tls:
+  - hosts:
+    - dev.jitsi.com
+  rules:
+    - host: dev.jitsi.com
+      http:
+        paths:
+        - path: /
+          backend:
+            serviceName: haproxy
+            servicePort: 80

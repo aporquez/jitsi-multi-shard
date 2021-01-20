@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: jitsi
+  name: jicofo
+spec:
+  template:
+    spec:
+      # avoid that pods of different shards share zone
+      nodeSelector:
+        topology.kubernetes.io/zone: ZONE_1
+      containers:
+        - name: jicofo
+          env:
+            - name: XMPP_SERVER
+              value: shard-1-prosody

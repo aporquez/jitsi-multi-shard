@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: jitsi
+  labels:
+    k8s-app: jvb
+  name: jvb
+  # needed for metacontroller to create/delete service per pod
+  annotations:
+    service-per-pod-label: "statefulset.kubernetes.io/pod-name"
+spec:
+  replicas: 2
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      k8s-app: jvb
+  serviceName: jvb
+  # relax ordering guarantees because not needed (any JVB pod can be stopped or started at any time)
+  podManagementPolicy: Parallel
+  template:
+    metadata:
+      labels:
+        k8s-app: jvb
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9888'
+    spec:
+      volumes:
+        - name: jvb-entrypoint
+          configMap:
+            name: jvb-entrypoint
+            defaultMode: 0744 # make executable
+        - name: jvb-shutdown
+          configMap:
+            name: jvb-shutdown
+            defaultMode: 0744 # make executable
+      # in case there is a long running conference on a JVB that should be shut down, give it time to finish
+      terminationGracePeriodSeconds: 2147483647
+      containers:
+        - name: prometheus-exporter
+          # sidecar container that exports stats for prometheus
+          # values are scraped by ../ops/monitoring/jvb-pod-monitor.yaml
+          image: systemli/prometheus-jitsi-meet-exporter:1.1.1
+          imagePullPolicy: Always
+          ports:
+            - name: metrics
+              containerPort: 9888
+          args:
+            - "-videobridge-url"
+            - "http://localhost:8080/colibri/stats"
+        - name: jvb
+          image: jitsi/jvb:stable-5142-4
+          imagePullPolicy: Always
+          lifecycle:
+            preStop:
+              exec:
+                command: ["bash", "/shutdown/graceful_shutdown.sh", "-t 3"]
+          command:
+            - /entrypoint/entrypoint.sh
+          args:
+            - "/init"
+          readinessProbe:
+            httpGet:
+              path: /about/health
+              port: 8080
+            initialDelaySeconds: 10
+          volumeMounts:
+            - name: jvb-entrypoint
+              mountPath: /entrypoint
+            - name: jvb-shutdown
+              mountPath: /shutdown
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: XMPP_SERVER
+              value: prosody
+            - name: DOCKER_HOST_ADDRESS
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: XMPP_DOMAIN
+              valueFrom:
+                  configMapKeyRef:
+                    key: XMPP_DOMAIN
+                    name: common
+            - name: XMPP_AUTH_DOMAIN
+              valueFrom:
+                  configMapKeyRef:
+                    key: XMPP_AUTH_DOMAIN
+                    name: common
+            - name: XMPP_INTERNAL_MUC_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  key: XMPP_INTERNAL_MUC_DOMAIN
+                  name: common
+            # - name: JVB_STUN_SERVERS
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: jitsi-config
+            #       key: JVB_STUN_SERVERS
+            - name: JICOFO_AUTH_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: JICOFO_AUTH_USER
+                  name: common
+            - name: JVB_TCP_HARVESTER_DISABLED
+              value: "true"
+            - name: JVB_ENABLE_APIS
+              value: colibri,rest
+            - name: JVB_AUTH_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: JVB_AUTH_USER
+                  name: common
+            - name: JVB_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JVB_AUTH_PASSWORD
+            - name: JICOFO_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JICOFO_AUTH_PASSWORD
+            - name: JVB_BREWERY_MUC
+              valueFrom:
+                configMapKeyRef:
+                  key: JVB_BREWERY_MUC
+                  name: common
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  key: TIMEZONE
+                  name: common

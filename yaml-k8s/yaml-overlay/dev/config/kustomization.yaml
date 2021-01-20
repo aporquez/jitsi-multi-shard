@@ -1,0 +1,5 @@
+bases:
+  - ../../../yaml-base/config
+
+patchesStrategicMerge:
+  - common-configmap-patch.yaml

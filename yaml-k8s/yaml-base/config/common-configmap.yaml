@@ -1,0 +1,15 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  namespace: jitsi
+  name: common
+data:
+  XMPP_DOMAIN: meet.jitsi
+  XMPP_AUTH_DOMAIN: auth.meet.jitsi
+  XMPP_MUC_DOMAIN: muc.meet.jitsi
+  XMPP_INTERNAL_MUC_DOMAIN: internal-muc.meet.jitsi
+  JICOFO_AUTH_USER: focus
+  TIMEZONE: America/New_York
+  JVB_BREWERY_MUC: jvbbrewery
+  JVB_AUTH_USER: jvb
+  ENABLE_XMPP_WEBSOCKET: "true"

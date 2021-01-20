@@ -1,0 +1,7 @@
+bases:
+  - ../../../yaml-base/loadbalancer
+
+patchesStrategicMerge:
+  - haproxy-configmap-patch.yaml
+  - haproxy-statefulset-patch.yaml
+  - haproxy-ingress-patch.yaml

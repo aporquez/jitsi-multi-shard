@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: jitsi
+  labels:
+    k8s-app: prosody
+  name: prosody
+spec:
+  template:
+    spec:
+      containers:
+        - name: prosody
+          env:
+            - name: PUBLIC_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: PUBLIC_URL
+                  name: common
+            - name: XMPP_MUC_MODULES
+              value: "muc_allowners"
+            - name: XMPP_CROSS_DOMAIN
+              value: "true"
+            # Auth Config
+            - name: AUTH_TYPE
+              value: "jwt"
+            - name: ENABLE_AUTH
+              value: "1"
+            - name: ENABLE_GUESTS
+              value: "0"
+            - name: JWT_ALLOW_EMPTY
+              value: "0"
+            - name: JWT_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JWT_APP_ID
+            - name: JWT_APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JWT_APP_SECRET
+            - name: JWT_ACCEPTED_ISSUERS
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JWT_ACCEPTED_ISSUERS
+            - name: JWT_ACCEPTED_AUDIENCES
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JWT_ACCEPTED_AUDIENCES
+            # - name: JWT_ASAP_KEYSERVER
+            #   value: ""
+            # - name: JWT_ASAP_KEYSERVER
+            #   value: ""
+            # End Auth Config
+          resources:
+            limits:
+              memory: 300Mi
+              cpu: 300m
+            requests:
+              memory: 300Mi
+              cpu: 300m

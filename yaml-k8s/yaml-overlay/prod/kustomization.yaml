@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: jitsi
+resources:
+  - config/
+  - loadbalancer/
+  #- monitoring/
+  - shard-0/
+  - shard-1/
+images:
+- name: haproxy
+  newTag: 2.3.2
+- name: systemli/prometheus-jitsi-meet-exporter
+  newTag: 1.1.2
+- name: jitsi/jvb
+  newTag: stable-5142-4
+- name: jitsi/jicofo
+  newTag: stable-5142-4
+- name: jitsi/prosody
+  newTag: stable-5142-4
+- name: jitsi/web
+  newTag: stable-5142-4

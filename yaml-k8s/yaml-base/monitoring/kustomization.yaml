@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- haproxy-pod-monitor.yaml
+- jvb-pod-monitor.yaml
+- prosody-pod-monitor.yaml

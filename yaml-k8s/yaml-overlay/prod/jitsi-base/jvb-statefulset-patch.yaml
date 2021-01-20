@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: jitsi
+  name: jvb
+spec:
+  template:
+    spec:
+      containers:
+        - name: prometheus-exporter
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "100Mi"
+            limits:
+              cpu: "100m"
+              memory: "100Mi"
+        - name: jvb
+          env:
+            - name: PUBLIC_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: PUBLIC_URL
+                  name: common
+          resources:
+            requests:
+              cpu: "8000m"
+              memory: "1Gi"
+            limits:
+              cpu: "8000m"
+              memory: "1Gi"

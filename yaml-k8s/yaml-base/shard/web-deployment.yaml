@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: jitsi
+  labels:
+    k8s-app: web
+  name: web
+spec:
+  replicas: 1 # one web instance per shard
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      k8s-app: web
+  template:
+    metadata:
+      labels:
+        k8s-app: web
+    spec:
+      volumes:
+        - name: web
+          configMap:
+            name: web
+            items:
+              - key: welcomePageAdditionalContent.html
+                path: welcomePageAdditionalContent.html
+              - key: plugin.head.html
+                path: plugin.head.html
+              - key: config.js
+                path: config.js
+              - key: interface_config.js
+                path: interface_config.js
+      containers:
+        - name: web
+          resources:
+            limits:
+              memory: 300Mi
+              cpu: 400m
+            requests:
+              memory: 300Mi
+              cpu: 400m
+          image: jitsi/web:stable-5142-4
+          imagePullPolicy: Always
+          readinessProbe:
+            httpGet:
+              port: 80
+          # volumeMounts:
+          # - name: web
+          #   mountPath: /usr/share/jitsi-meet/static/welcomePageAdditionalContent.html
+          #   subPath: welcomePageAdditionalContent.html
+          # - name: web
+          #   mountPath: /usr/share/jitsi-meet/plugin.head.html
+          #   subPath: plugin.head.html
+          # - name: web
+          #   mountPath: /defaults/config.js
+          #   subPath: config.js
+          # - name: web
+          #   mountPath: /defaults/interface_config.js
+          #   subPath: interface_config.js
+          env:
+            - name: DISABLE_HTTPS
+              value: "1"
+            - name: HTTP_PORT
+              value: "80"
+            - name: XMPP_SERVER
+              value: prosody
+            - name: JICOFO_AUTH_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: JICOFO_AUTH_USER
+                  name: common
+            - name: XMPP_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  key: XMPP_DOMAIN
+                  name: common
+            - name: XMPP_AUTH_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  key: XMPP_AUTH_DOMAIN
+                  name: common
+            - name: XMPP_INTERNAL_MUC_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  key: XMPP_INTERNAL_MUC_DOMAIN
+                  name: common
+            - name: XMPP_BOSH_URL_BASE
+              value: http://prosody:5280
+            - name: XMPP_MUC_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  key: XMPP_MUC_DOMAIN
+                  name: common
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  key: TIMEZONE
+                  name: common
+            - name: JVB_TCP_HARVESTER_DISABLED
+              value: "true"
+            - name: ENABLE_P2P
+              value: "false"
+            - name: ENABLE_XMPP_WEBSOCKET
+              valueFrom:
+                configMapKeyRef:
+                  key: ENABLE_XMPP_WEBSOCKET
+                  name: common

@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: jitsi
+  name: web
+spec:
+  template:
+    spec:
+      # avoid that pods of different shards share zone
+      nodeSelector:
+        topology.kubernetes.io/zone: ZONE_1
+      containers:
+        - name: web
+          env:
+            - name: XMPP_SERVER
+              value: shard-1-prosody
+            - name: XMPP_BOSH_URL_BASE
+              value: http://shard-1-prosody:5280

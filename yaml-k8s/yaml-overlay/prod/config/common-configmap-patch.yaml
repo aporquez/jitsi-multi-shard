@@ -1,0 +1,7 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  namespace: jitsi
+  name: common
+data:
+  PUBLIC_URL: "https://prod.jitsi.com"

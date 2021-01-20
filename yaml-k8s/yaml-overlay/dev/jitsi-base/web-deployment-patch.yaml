@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: jitsi
+  name: web
+spec:
+  template:
+    spec:
+      containers:
+        - name: web
+          env:
+            - name: PUBLIC_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: PUBLIC_URL
+                  name: common
+          resources:
+            limits:
+              memory: 300Mi
+              cpu: 400m
+            requests:
+              memory: 300Mi
+              cpu: 400m

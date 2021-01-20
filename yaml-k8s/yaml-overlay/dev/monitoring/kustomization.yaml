@@ -1,0 +1,7 @@
+bases:
+  - ../../../yaml-base/monitoring
+
+patchesStrategicMerge:
+- haproxy-pod-monitor-patch.yaml
+- jvb-pod-monitor-patch.yaml
+- prosody-pod-monitor-patch.yaml

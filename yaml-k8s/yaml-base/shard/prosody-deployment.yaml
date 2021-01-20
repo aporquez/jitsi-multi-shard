@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: jitsi
+  labels:
+    k8s-app: prosody
+  name: prosody
+spec:
+  replicas: 1 # one prosody instance per shard
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      k8s-app: prosody
+      shard: "0"
+  template:
+    metadata:
+      labels:
+        k8s-app: prosody
+        shard: "0"
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '5280'
+    spec:
+      volumes:
+        - name: prosody
+          configMap:
+            name: prosody
+            items:
+              - key: mod_prometheus.lua
+                path: mod_prometheus.lua
+              - key: mod_measure_stanza_counts.lua
+                path: mod_measure_stanza_counts.lua
+              - key: mod_measure_client_presence.lua
+                path: mod_measure_client_presence.lua
+              - key: jitsi-meet.cfg.lua
+                path: jitsi-meet.cfg.lua
+      containers:
+        - name: prosody
+          resources:
+            limits:
+              memory: 300Mi
+              cpu: 300m
+            requests:
+              memory: 300Mi
+              cpu: 300m
+          image: jitsi/prosody:stable-5142-4
+          imagePullPolicy: Always
+          ports:
+            - name: metrics
+              containerPort: 5280
+          readinessProbe:
+            ## the command that is called obeys standard exit codes
+            exec:
+              command:
+                - prosodyctl
+                - --config
+                - /config/prosody.cfg.lua
+                - status
+          volumeMounts:
+          # add-ons that allow exporting of metrics to prometheus (mod_prometheus.lua)
+          # or enrich the available stats (mod_measure_stanza_counts.lua,
+          # mod_measure_client_presence.lua)
+          - name: prosody
+            mountPath: /prosody-plugins-custom/mod_prometheus.lua
+            subPath: mod_prometheus.lua
+          - name: prosody
+            mountPath: /usr/lib/prosody/modules/mod_measure_stanza_counts.lua
+            subPath: mod_measure_stanza_counts.lua
+          - name: prosody
+            mountPath: /usr/lib/prosody/modules/mod_measure_client_presence.lua
+            subPath: mod_measure_client_presence.lua
+          - name: prosody
+            mountPath: /defaults/conf.d/jitsi-meet.cfg.lua
+            subPath: jitsi-meet.cfg.lua
+          env:
+            - name: XMPP_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  key: XMPP_DOMAIN
+                  name: common
+            - name: XMPP_AUTH_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  key: XMPP_AUTH_DOMAIN
+                  name: common
+            - name: XMPP_MUC_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  key: XMPP_MUC_DOMAIN
+                  name: common
+            - name: XMPP_INTERNAL_MUC_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  key: XMPP_INTERNAL_MUC_DOMAIN
+                  name: common
+            - name: XMPP_MUC_MODULES
+              value: muc_meeting_id,muc_domain_mapper
+            - name: JICOFO_COMPONENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JICOFO_COMPONENT_SECRET
+            - name: JVB_AUTH_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: JVB_AUTH_USER
+                  name: common
+            - name: JVB_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JVB_AUTH_PASSWORD
+            - name: JICOFO_AUTH_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: JICOFO_AUTH_USER
+                  name: common
+            - name: JICOFO_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jitsi-config
+                  key: JICOFO_AUTH_PASSWORD
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  key: TIMEZONE
+                  name: common
+            - name: JVB_TCP_HARVESTER_DISABLED
+              value: "true"
+            # activate add-ons that enrich the available stats of prosody
+            - name: GLOBAL_MODULES
+              value: prometheus,measure_stanza_counts,measure_client_presence,carbons,blocklist,vcard4,vcard_legacy
+            # config to allow exporting metrics in prometheus format by prometheus add-on
+            - name: GLOBAL_CONFIG
+              value: statistics = "internal";\nstatistics_interval = 15;
+            - name: ENABLE_LOBBY
+              value: "true"
+            - name: ENABLE_XMPP_WEBSOCKET
+              valueFrom:
+                configMapKeyRef:
+                  key: ENABLE_XMPP_WEBSOCKET
+                  name: common
+            
